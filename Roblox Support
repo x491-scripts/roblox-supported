@@ -1,6 +1,7 @@
 -- LocalScript (StarterGui)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local usernameToShow = "4kxYvng"
 local localPlayer = Players.LocalPlayer
@@ -9,27 +10,53 @@ local localPlayer = Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ProfilePopupUI"
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
 screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
 -- Main Frame
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 420, 0, 180)
-frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
 frame.Parent = screenGui
-
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
+
+-- Make draggable
+local dragging, dragInput, dragStart, startPos
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+frame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
 
 -- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -20, 0, 28)
 title.Position = UDim2.new(0, 10, 0, 10)
 title.BackgroundTransparency = 1
-title.Text = "follow Roblox profile to open Script"
+title.Text = "Follow Roblox profile to open Script"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -91,31 +118,36 @@ closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.Parent = frame
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1,0)
 
--- Popup message
-local popup = Instance.new("Frame")
-popup.Size = UDim2.new(0, 420, 0, 70)
-popup.Position = UDim2.new(0.5, -210, 0.8, 0)
-popup.AnchorPoint = Vector2.new(0.5, 0)
-popup.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-popup.BackgroundTransparency = 0.2
-popup.Visible = false
-popup.Parent = screenGui
-Instance.new("UICorner", popup).CornerRadius = UDim.new(0, 10)
+-- Popup function
+local function createPopup(text)
+	local popup = Instance.new("Frame")
+	popup.Size = UDim2.new(0, 380, 0, 50)
+	popup.AnchorPoint = Vector2.new(0.5, 0)
+	popup.Position = UDim2.new(0.5, 0, 0.5, 120) -- BELOW main UI now
+	popup.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	popup.BackgroundTransparency = 1
+	popup.Visible = false
+	popup.Parent = screenGui
+	Instance.new("UICorner", popup).CornerRadius = UDim.new(0, 10)
 
-local popupText = Instance.new("TextLabel")
-popupText.Size = UDim2.new(1, -20, 1, -20)
-popupText.Position = UDim2.new(0, 10, 0, 10)
-popupText.BackgroundTransparency = 1
-popupText.TextWrapped = true
-popupText.TextXAlignment = Enum.TextXAlignment.Center
-popupText.TextYAlignment = Enum.TextYAlignment.Center
-popupText.Font = Enum.Font.GothamMedium
-popupText.TextSize = 18
-popupText.TextColor3 = Color3.new(1,1,1)
-popupText.Text = "Complete the required step, then click the button again."
-popupText.Parent = popup
+	local popupText = Instance.new("TextLabel")
+	popupText.Size = UDim2.new(1, -20, 1, -10)
+	popupText.Position = UDim2.new(0, 10, 0, 5)
+	popupText.BackgroundTransparency = 1
+	popupText.TextWrapped = true
+	popupText.TextXAlignment = Enum.TextXAlignment.Center
+	popupText.TextYAlignment = Enum.TextYAlignment.Center
+	popupText.Font = Enum.Font.GothamMedium
+	popupText.TextSize = 16
+	popupText.TextColor3 = Color3.new(1,1,1)
+	popupText.Text = text
+	popupText.TextTransparency = 1
+	popupText.Parent = popup
 
--- Avatar setup (uses your real Roblox avatar)
+	return popup, popupText
+end
+
+-- Avatar setup
 task.spawn(function()
 	local success, userId = pcall(function()
 		return Players:GetUserIdFromNameAsync(usernameToShow)
@@ -138,26 +170,35 @@ copyBtn.MouseButton1Click:Connect(function()
 end)
 
 openBtn.MouseButton1Click:Connect(function()
-	popup.Visible = true
-	popup.BackgroundTransparency = 1
-	popupText.TextTransparency = 1
-	TweenService:Create(popup, TweenInfo.new(0.3), {BackgroundTransparency = 0.2}):Play()
-	TweenService:Create(popupText, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
-	wait(4)
-	TweenService:Create(popup, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-	TweenService:Create(popupText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-	wait(0.5)
-	popup.Visible = false
+	local popup1, text1 = createPopup("Checking...")
+	local popup2, text2 = createPopup("Complete the required step, then click the button again.")
+
+	popup1.Visible = true
+	TweenService:Create(popup1, TweenInfo.new(0.3), {BackgroundTransparency = 0.2}):Play()
+	TweenService:Create(text1, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
+
+	task.wait(4)
+
+	TweenService:Create(popup1, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(text1, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+	task.wait(0.4)
+	popup1:Destroy()
+
+	popup2.Visible = true
+	TweenService:Create(popup2, TweenInfo.new(0.3), {BackgroundTransparency = 0.2}):Play()
+	TweenService:Create(text2, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
+	task.wait(4)
+	TweenService:Create(popup2, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(text2, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+	task.wait(0.4)
+	popup2:Destroy()
 end)
 
 closeBtn.MouseButton1Click:Connect(function()
 	frame:Destroy()
-	popup:Destroy()
 end)
 
--- Entrance animation (keeps it centered)
-frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+-- Entrance animation
 TweenService:Create(frame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, 0, 0.5, 0)
 }):Play()
-

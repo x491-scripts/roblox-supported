@@ -14,10 +14,12 @@ screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 -- Main Frame
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 420, 0, 180)
-frame.Position = UDim2.new(0.5, -210, 0.5, -90)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 frame.AnchorPoint = Vector2.new(0.5, 0.5)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
 frame.Parent = screenGui
 
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
@@ -153,7 +155,9 @@ closeBtn.MouseButton1Click:Connect(function()
 	popup:Destroy()
 end)
 
--- Entrance animation
+-- Entrance animation (keeps it centered)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
 TweenService:Create(frame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-	Position = UDim2.new(0.5, -210, 0.5, -90)
+	Position = UDim2.new(0.5, 0, 0.5, 0)
 }):Play()
+
